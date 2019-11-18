@@ -162,7 +162,7 @@ def register(req):
             else:
                 f_mng.flash('Username taken')
 
-    return render_template('register.html', f_mng.get_flashes())
+    return render_template('register.html', flash_messages=f_mng.get_flashes())
 
 
 @app.route('/main')
@@ -228,5 +228,5 @@ def handler_404(req=None):
 
 
 if __name__ == '__main__':
-    make_server(os.environ.get('HOST', ''), int(os.environ.get('PORT', 80)), app).serve_forever()
+    make_server(os.environ.get('HOST', ''), int(os.environ.get('PORT', 5000)), app).serve_forever()
     # make_server(config['HOST'], config['PORT'], app).serve_forever()

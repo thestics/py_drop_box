@@ -19,7 +19,7 @@ def init_db(path):
         db_manager.conn.commit()
     except Exception:
         pass
-    
+
 
 class DB:
 
