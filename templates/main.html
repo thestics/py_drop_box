@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{%block title%}Main{% endblock %}
+
+{% block navbar %}
+<ul class="navbar-nav my-lg-0">
+    <li class="nav-item">
+      <a class="nav-link" href="/main?action=logout">Logout</a>
+    </li>
+</ul>
+{% endblock %}
+
+
+{% block content %}
+
+{% if dir_view %}
+<div class="container" style="padding: 15px">
+    {%- for dir_name, cur_full_dir in dir_view.list_cum_dir() -%}
+        <a href="main?path={{ cur_full_dir }}">{{ dir_name }}</a>
+    {%- endfor -%}
+</div>
+
+<div class="container" style="padding: 15px">
+    <form action="/main" method="post">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <button type="submit" class="btn btn-info" style="background-color: #2D617E">Create</button>
+            </div>
+            <label for="make_dir_input"></label>
+            <input type="text" class="form-control" placeholder="Directory" name="dir_name_create" id="make_dir_input">
+        </div>
+    </form>
+</div>
+
+<div class="container">
+    <form action="/main" method="post" enctype="multipart/form-data">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <button class="btn btn-info" type="submit" style="background-color: #2D617E">Upload</button>
+          </div>
+          <div class="custom-file">
+            <input type="file" name="filename" class="custom-file-input" id="inputGroupFile04">
+            <label class="custom-file-label" for="inputGroupFile04">Choose file</label>
+          </div>
+        </div>
+    </form>
+
+    <script>
+        document.getElementById("inputGroupFile04").onchange = function() {
+              let fileName = $(this).val().split("\\").pop();
+              $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+        }
+    </script>
+
+    <a href="/main?path={{ dir_view.parent }}">..</a> <br>
+
+    {% for dir in dir_view.dirs %}
+    <a href="main?path={{ dir_view.cwd + dir }}&action=remove_dir">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+            <path fill="none" d="M0 0h24v24H0V0z"/>
+            <path d="M7 11v2h10v-2H7zm5-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+        </svg>
+    </a>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+        <path fill="none" d="M0 0h24v24H0V0z"/>
+        <path d="M9.17 6l2 2H20v10H4V6h5.17M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+    </svg>
+
+    <a href="/main?path={{ dir_view.cwd + dir + '/' }}">
+        {{ dir + '/' }}
+    </a> <br>
+    {% endfor %}
+
+    {% for file in dir_view.files %}
+    <a href="main?path={{ dir_view.cwd + file }}&action=remove_file">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+            <path fill="none" d="M0 0h24v24H0V0z"/>
+            <path d="M7 11v2h10v-2H7zm5-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+        </svg>
+    </a>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+        <path fill="none" d="M0 0h24v24H0V0z"/>
+        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+    </svg>
+    <a href="/main?path={{ dir_view.cwd + file }}" download>
+        {{ file }}
+    </a> <br>
+    {% endfor %}
+
+</div>
+{% endif %}
+
+{% endblock%}
