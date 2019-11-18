@@ -2,8 +2,6 @@
 # -*-encoding: utf-8-*-
 # Author: Danil Kovalenko
 
-from flask import send_from_directory
-
 import os
 from functools import partial
 

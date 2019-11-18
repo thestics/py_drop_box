@@ -12,13 +12,14 @@ from http.cookies import SimpleCookie
 from app import App
 from app import render_template
 from config import config
-from db import DB
+from db import DB, init_db
 from util import derive_token, Client, FlashManager
 
 
 log.getLogger()
 
 app = App()
+init_db('storage.db')
 
 # TODO: consider thread-safety issues for sessions global var
 sessions = set()
@@ -227,4 +228,5 @@ def handler_404(req=None):
 
 
 if __name__ == '__main__':
-    make_server(config['HOST'], config['PORT'], app).serve_forever()
+    make_server(os.environ.get('HOST', ''), os.environ.get('PORT', 80), app).serve_forever()
+    # make_server(config['HOST'], config['PORT'], app).serve_forever()
