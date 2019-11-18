@@ -30,7 +30,7 @@ current_users = dict()
 
 def on_register(u_name):
     """Routine to be executed after user register"""
-    os.mkdir(os.path.join(server_dir, u_name))
+    os.makedirs(os.path.join(server_dir, u_name), exist_ok=True)
 
 
 def is_file(u_name, server_dir_path):
@@ -162,7 +162,7 @@ def register(req):
             else:
                 f_mng.flash('Username taken')
 
-    return render_template('register.html', flash_messages=f_mng.get_flashes())
+        return render_template('register.html', flash_messages=f_mng.get_flashes())
 
 
 @app.route('/main')
