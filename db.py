@@ -12,11 +12,14 @@ log.getLogger()
 
 def init_db(path):
     """Init routine"""
-    db_manager = DB(path)
-    q = """create table USERS (login text, pass_hash text)"""
-    db_manager.curs.execute(q)
-    db_manager.conn.commit()
-
+    try:
+        db_manager = DB(path)
+        q = """create table USERS (login text, pass_hash text)"""
+        db_manager.curs.execute(q)
+        db_manager.conn.commit()
+    except Exception:
+        pass
+    
 
 class DB:
 
