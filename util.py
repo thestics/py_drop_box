@@ -45,15 +45,16 @@ class DirView:
 
 class Client:
     """Wrapper for client to track current online users"""
-    def __init__(self, u_name, cwd='/'):
+    def __init__(self, u_name, server_dir, cwd='/'):
+        self.server_dir = server_dir
         self.u_name = u_name
         self.cwd = cwd
 
-    def real_cwd(self, server_dir):
-        return os.path.join(server_dir, self.u_name, self.cwd.strip('/'))
+    def real_cwd(self):
+        return os.path.join(self.server_dir, self.u_name, self.cwd.strip('/'))
 
-    def get_dir_view(self, server_dir):
-        return DirView(os.path.join(server_dir, self.u_name), self.cwd)
+    def get_dir_view(self):
+        return DirView(os.path.join(self.server_dir, self.u_name), self.cwd)
 
 
 class Flash:
