@@ -70,7 +70,9 @@ class IndexView(ViewsManager):
             session_token = parsed_cookie.get('session')
 
             if session_token and session_token.value in self.app_data.sessions:
-                return self.app_data.app.redirect(self.app_data.app.url_for(req, 'main'))
+                return self.app_data.app.redirect(
+                    self.app_data.app.url_for(req, 'main')
+                )
 
         return render_template('index.html')
 
@@ -91,7 +93,8 @@ class LoginView(ViewsManager):
                     session_token = derive_token()
                     self.app_data.sessions.add(session_token)
                     response.set_cookie('session', session_token)
-                    self.app_data.current_users[session_token] = Client(u_name, self.app_data.server_dir)
+                    client = Client(u_name, self.app_data.server_dir)
+                    self.app_data.current_users[session_token] = client
                     return response
 
                 # incorrect u_name or u_pass
@@ -107,7 +110,8 @@ class RegisterView(ViewsManager):
 
     def on_register(self, u_name):
         """Routine to be executed after user register"""
-        os.makedirs(os.path.join(self.app_data.server_dir, u_name), exist_ok=True)
+        os.makedirs(os.path.join(self.app_data.server_dir, u_name),
+                    exist_ok=True)
 
     def __call__(self, req):
         with FlashManager() as f_mng:
@@ -131,7 +135,7 @@ class MainView(ViewsManager):
 
     route = '/main'
 
-    def handle_upload_file(self, cur_client: Client, req, f_mng):
+    def handle_upload_file(self, cur_client, req, f_mng):
         # print(req.file.name)
 
         if not self.is_allowed_identifier(req.file.name):
@@ -148,7 +152,7 @@ class MainView(ViewsManager):
         else:
             f_mng.flash("Uploaded failed due to unhandled error")
 
-    def handle_remove(self, requested_path, action, client: Client, flash_manager):
+    def handle_remove(self, requested_path, action, client, flash_manager):
         if action == 'remove_dir':
             self._handle_file_system_action(
                 requested_path, client, os.rmdir, flash_manager,
@@ -195,7 +199,9 @@ class MainView(ViewsManager):
         return os.path.isfile(path)
 
     def handle_download_file(self, u_name, server_dir_path):
-        real_path = os.path.join(self.app_data.server_dir, u_name, server_dir_path.strip('/'))
+        real_path = os.path.join(self.app_data.server_dir,
+                                 u_name,
+                                 server_dir_path.strip('/'))
         return self.app_data.app.respond_with_file_download(real_path)
 
     def __call__(self, req):
@@ -225,7 +231,8 @@ class MainView(ViewsManager):
 
                 # path wants to be deleted
                 if requested_path and action:
-                    self.handle_remove(requested_path, action, cur_client, f_mng)
+                    self.handle_remove(requested_path, action,
+                                       cur_client, f_mng)
 
                 # if make dir required
                 elif create_dir_action:
@@ -242,7 +249,7 @@ class MainView(ViewsManager):
                     # requested path - file
                     if self.is_file(cur_client.u_name, requested_path):
                         return self.handle_download_file(cur_client.u_name,
-                                                    requested_path)
+                                                         requested_path)
                     # requested path - directory
                     else:
                         cur_client.cwd = requested_path

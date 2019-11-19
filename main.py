@@ -26,5 +26,6 @@ def handler_404(req=None):
 
 
 if __name__ == '__main__':
-    make_server(os.environ.get('HOST', ''), int(os.environ.get('PORT', 5000)), app).serve_forever()
-    # make_server(config['HOST'], config['PORT'], app).serve_forever()
+    make_server(os.environ.get('HOST', ''),
+                int(os.environ.get('PORT', 5000)),
+                app).serve_forever()
