@@ -113,7 +113,7 @@ class Request:
         """Parse get and post params"""
         self.GET_params = {}
 
-        for raw_kv in self.environ['QUERY_STRING'].split('&'):
+        for raw_kv in urllib.parse.unquote(self.environ['QUERY_STRING']).split('&'):
             if raw_kv:
                 k, v = raw_kv.split('=')
                 self.GET_params[k] = v

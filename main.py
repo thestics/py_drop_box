@@ -72,7 +72,7 @@ def handle_remove(requested_path, action, client, flash_manager):
 
 
 def handle_upload_file(cur_client, req, f_mng):
-    print(req.file.name)
+    # print(req.file.name)
     if not is_allowed_identifier(req.file.name):
         f_mng.flash("Insufficient filename. Try to rename before upload")
         return
