@@ -58,7 +58,14 @@ class Client:
 
 
 class Flash:
-    """Wrapper for flash message"""
+    """
+    Wrapper for flash message
+
+    Each instance will define a unique flash message with its severity level
+    which later can be used in template render
+    NOTE: unrecommended to be used directly, use FlashManager instead
+
+    """
     level_to_css_cls = {
         1: "alert-info",
         2: "alert-warning",
@@ -87,7 +94,10 @@ class Flash:
 
 
 class FlashManager:
-    """Manager class for Flash instances"""
+    """Manager class for Flash instances
+
+    Supports context manager
+    """
 
     flash_cls = Flash
 

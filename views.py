@@ -2,6 +2,11 @@
 # -*-encoding: utf-8-*-
 # Author: Danil Kovalenko
 
+"""
+Module to implement all view functionality for an application
+"""
+
+
 import os
 from http.cookies import SimpleCookie
 from hashlib import sha512
@@ -13,7 +18,10 @@ from db import DB, init_db
 
 
 class AppData:
-
+    """
+    Dataclass to store all information which may be required in a view
+    function
+    """
     def __init__(self, app, conf):
         self.app = app
         self.conf = conf
@@ -28,18 +36,56 @@ class AppData:
 
 
 class ViewsManager:
+    """
+    Class which has to be subclassed by each view class.
 
+    This class allows to employ an object-oriented approach to app views logic
+     -- all subclasses of present class will be monitored and stored
+    via __init_subclass__ method. Then each of them can be registered at once
+    with `register_all_views` method.
+    Also each subclass must define `route` attribute and `__call__` method
+    which will define behavior of an application at particular view.
+    """
     route = None
     route_classes = {}
 
-    def __init__(self, app_data):
+    def __init__(self, app_data: AppData):
         self.app_data = app_data
 
+    # shortcuts for AppData object fields
+    @property
+    def app(self):
+        return self.app_data.app
+    @property
+    def conf(self):
+        return self.app_data.conf
+    @property
+    def db_path(self):
+        return self.app_data.db_path
+    @property
+    def db_manager(self):
+        return self.app_data.db_manager
+    @property
+    def server_dir(self):
+        return self.app_data.server_dir
+    @property
+    def sessions(self):
+        return self.app_data.sessions
+    @property
+    def current_users(self):
+        return self.app_data.current_users
+
     def register_all_views(self):
+        """
+        Method to register all subclasses as view functions
+
+        :return: None
+        """
         for route, route_cls in self.route_classes.items():
-            self.app_data.app.route(route)(route_cls(self.app_data))
+            self.app.route(route)(route_cls(self.app_data))
 
     def __init_subclass__(cls):
+        # store subclass with its route in a dict
         ViewsManager.route_classes[cls.route] = cls
 
     def __call__(self, req):
@@ -69,15 +115,45 @@ class IndexView(ViewsManager):
             parsed_cookie = SimpleCookie(cookie)
             session_token = parsed_cookie.get('session')
 
-            if session_token and session_token.value in self.app_data.sessions:
-                return self.app_data.app.redirect(
-                    self.app_data.app.url_for(req, 'main')
+            if session_token and session_token.value in self.sessions:
+                return self.app.redirect(
+                    self.app.url_for(req, 'main')
                 )
 
         return render_template('index.html')
 
 
-class LoginView(ViewsManager):
+class AuthProxyView(ViewsManager):
+    """
+    Proxy class for login and register.
+    Contains all common functionality for them
+    """
+
+    route = None
+
+    def on_auth(self, req, u_name):
+        """Authentication routine"""
+        url_to_redirect = self.app.url_for(req, '/main')
+        response = self.app.redirect(url_to_redirect)
+        session_token = derive_token()
+        self.sessions.add(session_token)
+        response.set_cookie('session', session_token)
+        client = Client(u_name, self.server_dir)
+        self.current_users[session_token] = client
+        return response
+
+    def on_register(self, req, u_name):
+        """Routine to be executed after user register"""
+        os.makedirs(os.path.join(self.app_data.server_dir, u_name),
+                    exist_ok=True)
+        return self.on_auth(req, u_name)
+
+    def on_login(self, req, u_name):
+        """Routine to be executed after user login"""
+        return self.on_auth(req, u_name)
+
+
+class LoginView(AuthProxyView):
 
     route = '/login'
 
@@ -85,17 +161,11 @@ class LoginView(ViewsManager):
         with FlashManager() as f_mng:
 
             if req.POST_params:
-                u_name, u_pass_hash = self.extract_credentials_from_post_req(req)
+                credentials = self.extract_credentials_from_post_req(req)
+                u_name, u_pass_hash = credentials
 
-                if self.app_data.db_manager.try_login(u_name, u_pass_hash):
-                    url_to_redirect = self.app_data.app.url_for(req, '/main')
-                    response = self.app_data.app.redirect(url_to_redirect)
-                    session_token = derive_token()
-                    self.app_data.sessions.add(session_token)
-                    response.set_cookie('session', session_token)
-                    client = Client(u_name, self.app_data.server_dir)
-                    self.app_data.current_users[session_token] = client
-                    return response
+                if self.db_manager.try_login(u_name, u_pass_hash):
+                    return self.on_login(req, u_name)
 
                 # incorrect u_name or u_pass
                 else:
@@ -104,26 +174,20 @@ class LoginView(ViewsManager):
                                    flash_messages=f_mng.get_flashes())
 
 
-class RegisterView(ViewsManager):
+class RegisterView(AuthProxyView):
 
     route = '/register'
-
-    def on_register(self, u_name):
-        """Routine to be executed after user register"""
-        os.makedirs(os.path.join(self.app_data.server_dir, u_name),
-                    exist_ok=True)
 
     def __call__(self, req):
         with FlashManager() as f_mng:
             if req.POST_params:
-                u_name, u_pass_hash = self.extract_credentials_from_post_req(req)
+                credentials = self.extract_credentials_from_post_req(req)
+                u_name, u_pass_hash = credentials
 
                 if not u_name or not u_pass_hash:
                     f_mng.flash('Username and/or password not specified')
-                elif self.app_data.db_manager.try_register(u_name, u_pass_hash):
-                    self.on_register(u_name)
-                    f_mng.flash('Registered successfully. You can now log in',
-                                1)
+                elif self.db_manager.try_register(u_name, u_pass_hash):
+                    return self.on_register(req, u_name)
                 else:
                     f_mng.flash('Username taken')
 
@@ -136,8 +200,6 @@ class MainView(ViewsManager):
     route = '/main'
 
     def handle_upload_file(self, cur_client, req, f_mng):
-        # print(req.file.name)
-
         if not self.is_allowed_identifier(req.file.name):
             f_mng.flash("Insufficient filename. Try to rename before upload")
             return
@@ -219,15 +281,15 @@ class MainView(ViewsManager):
                 # condition won't trigger and we wil be redirected to
                 # home in logout state, previous session id cookie will
                 # not be valid
-                if session_token and session_token.value in self.app_data.sessions:
-                    self.app_data.sessions.remove(session_token.value)
+                if session_token and session_token.value in self.sessions:
+                    self.sessions.remove(session_token.value)
 
         with FlashManager() as f_mng:
             # logged-in state
-            if session_token and session_token.value in self.app_data.sessions:
+            if session_token and session_token.value in self.sessions:
                 requested_path = req.GET_params.get('path')
                 create_dir_action = req.POST_params.get('dir_name_create')
-                cur_client = self.app_data.current_users[session_token.value]
+                cur_client = self.current_users[session_token.value]
 
                 # path wants to be deleted
                 if requested_path and action:
@@ -258,4 +320,4 @@ class MainView(ViewsManager):
                 return render_template('main.html', dir_view=dir_view,
                                        flash_messages=f_mng.get_flashes())
 
-        return self.app_data.app.redirect(self.app_data.app.url_for(req, '/'))
+        return self.app.redirect(self.app.url_for(req, '/'))
