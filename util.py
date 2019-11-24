@@ -45,19 +45,27 @@ class DirView:
 
 class Client:
     """Wrapper for client to track current online users"""
-    def __init__(self, u_name, cwd='/'):
+    def __init__(self, u_name, server_dir, cwd='/'):
+        self.server_dir = server_dir
         self.u_name = u_name
         self.cwd = cwd
 
-    def real_cwd(self, server_dir):
-        return os.path.join(server_dir, self.u_name, self.cwd.strip('/'))
+    def real_cwd(self):
+        return os.path.join(self.server_dir, self.u_name, self.cwd.strip('/'))
 
-    def get_dir_view(self, server_dir):
-        return DirView(os.path.join(server_dir, self.u_name), self.cwd)
+    def get_dir_view(self):
+        return DirView(os.path.join(self.server_dir, self.u_name), self.cwd)
 
 
 class Flash:
-    """Wrapper for flash message"""
+    """
+    Wrapper for flash message
+
+    Each instance will define a unique flash message with its severity level
+    which later can be used in template render
+    NOTE: unrecommended to be used directly, use FlashManager instead
+
+    """
     level_to_css_cls = {
         1: "alert-info",
         2: "alert-warning",
@@ -86,7 +94,10 @@ class Flash:
 
 
 class FlashManager:
-    """Manager class for Flash instances"""
+    """Manager class for Flash instances
+
+    Supports context manager
+    """
 
     flash_cls = Flash
 
